@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	 xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/context  http://www.springframework.org/schema/context/spring-context-3.2.xsd"
+	default-lazy-init="true">
+
+	<description>Jedis Configuration</description>
+
+	<bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+		<property name="maxIdle" value="${redis.maxIdle}" /> <!-- 最大能够保持idel状态的对象数  -->
+		<property name="minIdle" value="${redis.minIdle}" /> <!-- 最小能够保持idel状态的对象数  -->
+		<property name="maxTotal" value="${redis.maxTotal}" /> 
+		<property name="maxWaitMillis" value="${redis.maxWait}" /> 
+		<property name="testOnBorrow" value="true" /> <!-- 当调用borrow Object方法时，是否进行有效性检查 -->
+	</bean>
+	
+	<bean id="jedisPool" class="redis.clients.jedis.JedisPool">
+		<constructor-arg index="0" ref="jedisPoolConfig" />
+		<constructor-arg index="1" value="${redis.host}" />
+		<constructor-arg index="2" value="${redis.port}" type="int" />
+		<constructor-arg index="3" value="2000" type="int" />
+		<constructor-arg index="4" value="${redis.password}" />
+	</bean>
+	
+	<!-- 自定义缓存注解实现 
+	<bean id="myCache" class="com.amass.basic.aop.RedisCacheInterceptor"/>
+	<aop:config>
+		<aop:pointcut id="cache_pointcat" expression="execution(public * com.amass..server..*.*(..))" />
+		<aop:aspect order="1" ref="myCache">
+			<aop:around method="around" pointcut-ref="cache_pointcat"/>
+			<aop:after method="after" pointcut-ref="cache_pointcat"/>
+		</aop:aspect>
+	</aop:config>
+	-->
+</beans>

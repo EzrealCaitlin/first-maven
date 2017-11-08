@@ -23,8 +23,36 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    
+    <dependency>
+		<groupId>amass.framework</groupId>
+		<artifactId>amass.framework.util</artifactId>
+		<version>0.0.1-RELEASE</version>
+	</dependency>
+	
+	<dependency>
+	 <groupId>gson</groupId>
+	  <artifactId>gson</artifactId>
+	  <version>2.2.4</version>
+	</dependency>
+	
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-core</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-databind</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-annotations</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>com.fasterxml.jackson.module</groupId>
+		<artifactId>jackson-module-jaxb-annotations</artifactId>
+	</dependency>
   </dependencies>
 </project>

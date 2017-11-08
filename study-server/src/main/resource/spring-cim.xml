@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+	  http://www.springframework.org/schema/beans 
+	  http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	  http://www.springframework.org/schema/tx 
+	  http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+	  http://www.springframework.org/schema/aop 
+	  http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+	"
+	>
+	
+	<!-- MINA -->
+	<bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+		<property name="customEditors">
+			<map>
+				<!-- 新版本spring要求使用这种配置方式  -->
+				<entry key="java.net.SocketAddress" value="org.apache.mina.integration.beans.InetSocketAddressEditor"/>
+				<!--旧版本spring配置方式 
+				<entry key="java.net.SocketAddress">
+					<bean class="org.apache.mina.integration.beans.InetSocketAddressEditor" />
+				</entry>
+				 -->
+			</map>
+		</property>
+	</bean>
+	<bean id="mainIoHandler" class="com.farsunset.cim.nio.handler.CimMainIOHandler" >
+	   <property name="handlers">
+			<map>
+				<!-- 绑定账号到服务端 -->
+				<entry key="client_bind">
+					<bean class="com.farsunset.ichat.cim.handler.BindHandler">
+						<property name="userManager" ref="mngTbUserManager"></property>
+						<property name="sessionManager" ref="sessionManager"></property>
+					</bean>
+				</entry>
+				<!-- 客户端退出 -->
+				<entry key="client_logout">
+					<bean class="com.farsunset.ichat.cim.handler.SessionClosedHandler">
+						<property name="userManager" ref="mngTbUserManager"></property>
+					</bean>
+				</entry>
+				<!-- 心跳 -->
+				<entry key="client_heartbeat">
+					<bean class="com.farsunset.cim.nio.handler.HeartbeatHandler"/>
+				</entry>
+				<!-- 会话关闭或连接断开 -->
+				<entry key="sessionClosedHander">
+					<bean class="com.farsunset.ichat.cim.handler.SessionClosedHandler">
+						<property name="userManager" ref="mngTbUserManager"></property>
+						<property name="sessionManager" ref="sessionManager"></property>
+					</bean>
+				</entry>
+				<!-- 客户端拉取离线消息 -->
+				<entry key="client_get_offline_message">
+					<bean class="com.farsunset.ichat.cim.handler.PushOfflineMessageHandler">
+						<property name="manager" ref="pushMessageManager"></property>
+					</bean>
+				</entry>
+				<!-- 上送当前经纬度 -->
+				<entry key="client_cycle_location">
+					<bean class="com.farsunset.ichat.cim.handler.LocationHandler">
+						<property name="userManager" ref="mngTbUserManager"></property>
+						<property name="sessionManager" ref="sessionManager"></property>
+					</bean>
+				</entry>
+				<!-- 更新消息接收状态 -->
+				<entry key="UPDATE_RECIVER_STATUS">
+					<bean class="com.farsunset.ichat.cim.handler.MessageReciveHandler">
+						<property name="manager" ref="pushMessageManager"></property>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="filterChainBuilder"
+		class="org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder">
+		<property name="filters">
+			<map>
+				<entry key="logging">
+					<bean class="org.apache.mina.filter.logging.LoggingFilter" />
+				</entry>
+				<entry key="codec">
+					<bean class="org.apache.mina.filter.codec.ProtocolCodecFilter">
+						<constructor-arg>
+							<bean class="com.farsunset.cim.nio.filter.ServerMessageCodecFactory" />
+						</constructor-arg>
+					</bean>
+				</entry>
+				
+				<entry key="executor">
+					<bean class="org.apache.mina.filter.executor.ExecutorFilter">
+					      <constructor-arg index="0" value="5"/>
+					      <constructor-arg index="1" value="10"/>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+   <bean id="sessionConfig" factory-bean="serverAcceptor"
+        factory-method="getSessionConfig" >
+        <property name="keepAlive" value="true"/>
+        <!-- 会话空闲时间，如果指定时间内没有收到终端任何报文，该连接将会变为空闲，之后关闭,这会导致前端不断重连,一般这个时间要比前端设置的时间至少长一秒 -->
+        <!-- 另一个导致前端不断重连的原因是，推送端口使用了nginx代理，其操作系统对tcp的连接设置了一个最长连接时间 -->
+        <property name="bothIdleTime" value="200"/>
+        <property name="tcpNoDelay" value="true"/>
+   </bean>
+    
+	<bean id="serverAcceptor" class="org.apache.mina.transport.socket.nio.NioSocketAcceptor"
+		init-method="bind" destroy-method="unbind">
+		<property name="defaultLocalAddress" value=":${cim.port}" />
+		<property name="handler" ref="mainIoHandler" />
+		<property name="filterChainBuilder" ref="filterChainBuilder" />
+		<property name="reuseAddress" value="true" />
+	</bean>
+	
+	<!-- 集群服务器时  CIMSessionManager 配置 -->
+	<bean id="sessionManager" class="com.farsunset.ichat.cim.session.RedisSessionManager"></bean>
+	  
+</beans>
+ 
